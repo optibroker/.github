@@ -2,6 +2,9 @@ name: Build and Push Docker Image
 
 on:
   workflow_call:
+    secrets:
+      FLEET_CHARTS_PAT:
+        required: true
 
 jobs:
   build:
@@ -39,3 +42,34 @@ jobs:
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+
+  update-fleet-chart:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout fleet charts
+      uses: actions/checkout@v4
+      with:
+        repository: optibroker/optibrokerV2-fleet-charts
+        token: ${{ secrets.FLEET_CHARTS_PAT }}
+
+    - name: Bump image tag in values.yaml
+      run: |
+        IMAGE="ghcr.io/${{ github.repository }}"
+        TAG="${{ github.ref_name }}"
+
+        FILE=$(grep -rl "repository: ${IMAGE}" .)
+        if [ -z "$FILE" ]; then
+          echo "No values.yaml found for ${IMAGE} — skipping"
+          exit 0
+        fi
+
+        sed -i "s|  tag:.*|  tag: ${TAG}|" "$FILE"
+
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add "$FILE"
+        git diff --staged --quiet && echo "No changes" && exit 0
+        git commit -m "chore(deploy): bump ${{ github.event.repository.name }} to ${TAG}"
+        git push
