@@ -2,6 +2,12 @@ name: Build and Push Docker Image
 
 on:
   workflow_call:
+    inputs:
+      fleet_repo:
+        description: 'Fleet chart repo to update (owner/repo format)'
+        required: false
+        type: string
+        default: 'optibroker/optibrokerV2-fleet-charts'
     secrets:
       FLEET_CHARTS_PAT:
         required: true
@@ -51,7 +57,7 @@ jobs:
     - name: Checkout fleet charts
       uses: actions/checkout@v4
       with:
-        repository: optibroker/optibrokerV2-fleet-charts
+        repository: ${{ inputs.fleet_repo }}
         token: ${{ secrets.FLEET_CHARTS_PAT }}
 
     - name: Bump image tag in values.yaml
