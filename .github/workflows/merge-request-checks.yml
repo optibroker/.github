@@ -12,6 +12,7 @@ on:
 jobs:
   merge_request_checks:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     services:
       docker:
@@ -25,11 +26,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Install make
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y make
 
       - name: Running pre merge checks
         run: make ${{ matrix.make-command }}
